@@ -1,0 +1,66 @@
+bundle:
+  name: delta-row-editor
+
+variables:
+  catalog:
+    description: Unity Catalog containing the target and audit tables
+    default: lr_serverless_aws_us_catalog
+  schema:
+    description: Schema (database) holding the editable + audit tables
+    default: delta_row_editor
+  target_table_name:
+    description: Unqualified name of the table users edit
+    default: customers
+  audit_table_name:
+    description: Unqualified name of the audit-trail table
+    default: customers_audit
+  pk_column:
+    description: Primary key column on the target table
+    default: customer_id
+  warehouse_id:
+    description: SQL warehouse ID (serverless) used by the app
+    # Set per-target or via --var warehouse_id=...
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fevm-lr-serverless-aws-us.cloud.databricks.com
+
+  prod:
+    mode: production
+    workspace:
+      host: https://fevm-lr-serverless-aws-us.cloud.databricks.com
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+resources:
+  apps:
+    delta_row_editor:
+      name: delta-row-editor-${bundle.target}
+      description: Streamlit app for end-user row editing of a Delta table with audit trail
+      source_code_path: ${workspace.file_path}
+      config:
+        command:
+          - streamlit
+          - run
+          - app.py
+          - --server.port
+          - "8000"
+          - --server.address
+          - 0.0.0.0
+        env:
+          - name: TARGET_TABLE
+            value: ${var.catalog}.${var.schema}.${var.target_table_name}
+          - name: AUDIT_TABLE
+            value: ${var.catalog}.${var.schema}.${var.audit_table_name}
+          - name: PK_COLUMN
+            value: ${var.pk_column}
+          - name: WAREHOUSE_ID
+            valueFrom: warehouse
+      resources:
+        - name: warehouse
+          description: Serverless SQL warehouse for queries and MERGEs
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
