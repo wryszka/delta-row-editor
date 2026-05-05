@@ -9,9 +9,16 @@ the browser. Streamlit UI, deployed via Databricks Asset Bundles.
 - **Optimistic concurrency.** The MERGE includes `WHEN MATCHED AND
   target.updated_at = source.original_updated_at`; if any row was edited by
   someone else since the data was loaded, the save fails loudly.
-- **On-behalf-of-user OAuth.** SQL calls run as the signed-in user (not the
-  app service principal), so Unity Catalog audit logs attribute edits
-  correctly.
+- **User attribution.** The signed-in user's email is read from the
+  `X-Forwarded-Email` header and recorded in every audit-table row.
+
+> Note on SQL warehouse auth: SQL calls run as the app's service principal,
+> not the signed-in user. Databricks Apps' default OBO scopes are IAM-only,
+> so the `X-Forwarded-Access-Token` token gets rejected by the warehouse.
+> True UC-level user attribution would require the workspace's OAuth app
+> integration to expose the `sql` scope. The audit table's `changed_by`
+> column gives you per-edit attribution at the application layer in the
+> meantime.
 
 > About this demo: a sample Databricks App provided as-is for demonstration
 > purposes. No client names or internal references.
@@ -41,9 +48,14 @@ delta-row-editor/
    - `USE SCHEMA` on the schema
    - `SELECT, MODIFY` on the target table
    - `MODIFY` on the audit table (or `SELECT, MODIFY`)
-3. **App service principal grants:** the SP needs `CAN_USE` on the warehouse
-   (handled automatically by the bundle's `resources` block). It does **not**
-   need table grants — table access is via the user's OBO token.
+3. **App service principal grants:** the SP needs:
+   - `CAN_USE` on the warehouse (handled by the bundle's `resources` block)
+   - `USE CATALOG` on the catalog
+   - `USE SCHEMA` on the schema
+   - `SELECT, MODIFY` on the target and audit tables
+
+   The SP id appears in the app metadata after deploy
+   (`databricks apps get <name> | grep service_principal_id`).
 
 ## One-time data setup
 

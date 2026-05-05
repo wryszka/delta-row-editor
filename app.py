@@ -9,7 +9,7 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
-from src.auth import get_user_email, get_user_token, is_local
+from src.auth import get_user_email, is_local
 from src.db import get_connection
 from src.editor import compute_diff, save
 
@@ -23,8 +23,7 @@ st.set_page_config(page_title="Delta Row Editor", layout="wide")
 
 
 def load_data() -> pd.DataFrame:
-    token = get_user_token()
-    with get_connection(token) as conn:
+    with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(f"SELECT * FROM {TARGET_TABLE} ORDER BY {PK_COLUMN}")
             return cur.fetchall_arrow().to_pandas()
@@ -113,8 +112,7 @@ def main() -> None:
 
     if st.button("Save changes", type="primary"):
         try:
-            token = get_user_token()
-            with get_connection(token) as conn:
+            with get_connection() as conn:
                 result = save(
                     conn,
                     TARGET_TABLE,

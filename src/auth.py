@@ -21,10 +21,5 @@ def get_user_email() -> Optional[str]:
     return _headers().get("X-Forwarded-Email")
 
 
-def get_user_token() -> Optional[str]:
-    """Return the on-behalf-of-user OAuth token, or None when running locally."""
-    return _headers().get("X-Forwarded-Access-Token")
-
-
 def is_local() -> bool:
     return get_user_email() is None
