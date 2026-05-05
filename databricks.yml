@@ -57,7 +57,7 @@ resources:
           - name: PK_COLUMN
             value: ${var.pk_column}
           - name: WAREHOUSE_ID
-            valueFrom: warehouse
+            value_from: warehouse
       resources:
         - name: warehouse
           description: Serverless SQL warehouse for queries and MERGEs

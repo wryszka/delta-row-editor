@@ -15,4 +15,4 @@ env:
   - name: PK_COLUMN
     value: customer_id
   - name: WAREHOUSE_ID
-    valueFrom: warehouse
+    value_from: warehouse
